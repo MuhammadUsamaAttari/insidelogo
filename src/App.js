@@ -3,7 +3,11 @@ import './App.css';
 import ImageUploader from 'react-images-upload';
 import download from './logo.png'
 import firebase from 'firebase'
-import { InputGroup, InputGroupAddon, InputGroupText, Input, Modal, ModalHeader, ModalBody, ModalFooter, Button } from 'reactstrap';
+import {
+  InputGroup, InputGroupAddon, InputGroupText, Input, Modal,
+  Card,
+  ModalHeader, ModalBody, ModalFooter, Button
+} from 'reactstrap';
 
 // const firebaseConfig = {
 //   apiKey: "AIzaSyDnpIB37FeVTyE8teDdXDSGSrj8FfaGAZ4",
@@ -37,9 +41,10 @@ class App extends React.Component {
       password: '',
       description: '',
       pictures: [],
+      unVerifiedUsers: {},
       pictureUploadingToServer: false,
       showModal: true,
-      userSignedIn: false,
+      userSignedIn: true,
     }
   }
 
@@ -69,7 +74,7 @@ class App extends React.Component {
   }
 
   componentDidMount() {
-
+    this.getUnverifiedUsers()
   }
 
   submitArticle = () => {
@@ -105,15 +110,36 @@ class App extends React.Component {
         this.setState({ userSignedIn: false, showModal: false })
       })
   }
+
+  getUnverifiedUsers = () => {
+    var ref = firebase.database().ref('Users')
+    ref.orderByChild('verified').equalTo(false).once('value', (snapshot) => {
+      console.log(snapshot.val())
+      this.setState({ unVerifiedUsers: snapshot.val() })
+    })
+  }
+  verifyUsers = (key) => {
+    var ref = firebase.database().ref('Users' + '/' + key)
+    let { unVerifiedUsers } = this.state
+    let userInfo = unVerifiedUsers[key]
+    userInfo.verified = true
+    console.log(ref)
+    ref.set(userInfo).then(() => {
+      this.getUnverifiedUsers()
+    })
+  }
   render() {
     let {
       buttonLabel,
       className
     } = this.props
-    let { heading, subtitle, description, userSignedIn, showModal, password, pictureUploadingToServer } = this.state
+    let { heading, subtitle, description, userSignedIn, showModal, password, pictureUploadingToServer,
+      unVerifiedUsers } = this.state
+    let obj = Object.keys(unVerifiedUsers ? unVerifiedUsers : {})
     return (
       <>
-        <Modal isOpen={showModal} className={className}>
+
+        {/* <Modal isOpen={showModal} className={className}>
           <ModalHeader >Enter Admin Password To Continue</ModalHeader>
           <ModalBody>
             <Input placeholder={'Password'} type={'password'} value={password}
@@ -124,10 +150,28 @@ class App extends React.Component {
             <Button color="primary" onClick={this.signIn} >Login</Button>{' '}
             <Button color="secondary" onClick={() => this.setState({ showModal: false })}>Cancel</Button>
           </ModalFooter>
-        </Modal>
+        </Modal> */}
 
         {userSignedIn ?
           <div className={'container'}>
+            {
+              obj.length > 0 ?
+                obj.map((key, index) => {
+                  let item = unVerifiedUsers[key]
+                  return (
+                    <div key={index} className={'usersList'}>
+                      <div>
+                        <span className={'info'}>{item.username}</span>
+                        <span>{item.profession}</span>
+                      </div>
+                      <Button outline color={'primary'} style={{ height: 37 }}
+                        onClick={() => this.verifyUsers(key)}
+                      >Verify</Button>
+                    </div>
+                  )
+                })
+                : null
+            }
             <div className={'imgContainer'}>
               <img src={download} alt='mypics' width='200px' style={{ margin: '25px' }} />
             </div>
@@ -138,7 +182,6 @@ class App extends React.Component {
               />
             </div>
             <div className={'inputContainer'}>
-
               <span className={'inputLabel'}> Sub Title </span>
               <Input placeholder={'Sub Title'} value={subtitle}
                 onChange={this.subtitleHandler}
@@ -158,7 +201,6 @@ class App extends React.Component {
               imgExtension={['.jpg', '.gif', '.png', '.gif']}
               maxFileSize={5242880}
             />
-
             <Button color="primary" disabled={pictureUploadingToServer} size="lg" block onClick={this.submitArticle}> Submit Article</Button>
           </div>
           :

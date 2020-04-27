@@ -49,6 +49,31 @@ body {
 .container{
 width:  60%;
 margin-bottom:  12px;
+
+}
+
+.usersList{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-left: 12px;
+  padding-right: 12px;
+  border: 1px solid #bbbbbb;
+  border-radius: 7px;
+  /* padding: 12px; */
+  min-height: 55px; 
+  margin: 6px;
+}
+
+.info{
+  display: block;
+  line-height: 16px;
+  font-size: 18px;
+  font-weight: 600;
+  color: grey;
+}
+.userName{
+  display: block;
 }
 .imgContainer{
   display: flex;
