@@ -63,6 +63,8 @@ class App extends React.Component {
         let {heading , subtitle, description} = this.state
         return (
             <div>
+
+
               <img src={download} alt='mypics' width='200px'/>              
 
               <br/>
@@ -80,7 +82,7 @@ class App extends React.Component {
             
             <br/><br/>
             Description <br/>
-            <input placeholder={'Description'} value={description}
+            <input className="Input-description" placeholder={'Description'} value={description}
             onChange={this.descriptionHandler}
             />
 
