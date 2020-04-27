@@ -90,3 +90,10 @@ form.Control {
   margin: 8px 0;
   box-sizing: border-box; */
 }
+
+.Input-description {
+  width: 80%;
+  padding: 50px 10px;
+  margin: 8px 0;
+  box-sizing: border-box;
+}
