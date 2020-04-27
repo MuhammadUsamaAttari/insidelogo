@@ -37,6 +37,7 @@ class App extends React.Component {
       password: '',
       description: '',
       pictures: [],
+      pictureUploadingToServer: false,
       showModal: true,
       userSignedIn: false,
     }
@@ -52,15 +53,17 @@ class App extends React.Component {
 
   onDrop = async (picture) => {
     let allPictures = []
+    this.setState({ pictureUploadingToServer: true })
     await picture.map(async (picture) => {
       var storageRef = firebase.storage().ref();
       await storageRef.child('Images' + picture.name).put(picture).then(async (snapshot) => {
         await storageRef.child('Images' + picture.name).getDownloadURL().then((url) =>
           allPictures.push(url)
         )
-      })
+      }).catch((err) => this.setState({ pictureUploadingToServer: false }))
       this.setState({
         pictures: allPictures,
+        pictureUploadingToServer: false
       });
     })
   }
@@ -69,6 +72,29 @@ class App extends React.Component {
 
   }
 
+  submitArticle = () => {
+    let { heading, subtitle, description, pictures } = this.state
+    if (heading !== '' && subtitle !== '' && description !== "" && pictures.length !== 0) {
+      let ref = firebase.database().ref('articles')
+      let obj = {
+        heading,
+        subtitle,
+        description,
+        pictures
+      }
+      ref.push(obj).then(() => {
+        this.setState({
+          heading: "",
+          subtitle: "",
+          description: "",
+          pictures: []
+        })
+      })
+    }
+    else {
+      alert('Enter Full Detail')
+    }
+  }
   signIn = () => {
     firebase.auth().signInWithEmailAndPassword('insidelogo@gmail.com', this.state.password)
       .then(() => {
@@ -84,7 +110,7 @@ class App extends React.Component {
       buttonLabel,
       className
     } = this.props
-    let { heading, subtitle, description, userSignedIn, showModal, password } = this.state
+    let { heading, subtitle, description, userSignedIn, showModal, password, pictureUploadingToServer } = this.state
     return (
       <>
         <Modal isOpen={showModal} className={className}>
@@ -133,7 +159,7 @@ class App extends React.Component {
               maxFileSize={5242880}
             />
 
-            <Button  color="primary" size="lg" block> Submit Article</Button>
+            <Button color="primary" disabled={pictureUploadingToServer} size="lg" block onClick={this.submitArticle}> Submit Article</Button>
           </div>
           :
           <div>
