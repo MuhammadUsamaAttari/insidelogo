@@ -5,7 +5,7 @@ import download from './logo.png'
 import firebase from 'firebase'
 import {
   InputGroup, InputGroupAddon, InputGroupText, Input, Modal,
-  Card,
+  Card, Dropdown, DropdownToggle, DropdownMenu, DropdownItem,
   ModalHeader, ModalBody, ModalFooter, Button
 } from 'reactstrap';
 
@@ -42,9 +42,12 @@ class App extends React.Component {
       description: '',
       pictures: [],
       unVerifiedUsers: {},
+      articleFor: 'Swipe Up',
+      showDropDown: false,
+      articles: [],
       pictureUploadingToServer: false,
       showModal: true,
-      userSignedIn: true,
+      userSignedIn: false,
     }
   }
 
@@ -75,24 +78,37 @@ class App extends React.Component {
 
   componentDidMount() {
     this.getUnverifiedUsers()
+    this.getArticlesData()
   }
 
+  getArticlesData = async () => {
+    let otherArticle = []
+    await firebase.database().ref('articles').once('value', (snapshot) => {
+      let obj = snapshot.val()
+      obj.id = obj.key
+      otherArticle.push(obj)
+    })
+    this.setState({ articles: otherArticle })
+    console.log(otherArticle, 'otherArticle')
+  }
   submitArticle = () => {
-    let { heading, subtitle, description, pictures } = this.state
+    let { heading, subtitle, description, pictures , articleFor } = this.state
     if (heading !== '' && subtitle !== '' && description !== "" && pictures.length !== 0) {
       let ref = firebase.database().ref('articles')
       let obj = {
+        date: new Date().toLocaleDateString(),
         heading,
         subtitle,
         description,
-        pictures
+        pictures,
+        articleFor
       }
       ref.push(obj).then(() => {
         this.setState({
           heading: "",
           subtitle: "",
           description: "",
-          pictures: []
+          pictures: [],
         })
       })
     }
@@ -111,7 +127,7 @@ class App extends React.Component {
       })
   }
 
-  getUnverifiedUsers = () => {
+  getUnverifiedUsers = async () => {
     var ref = firebase.database().ref('Users')
     ref.orderByChild('verified').equalTo(false).once('value', (snapshot) => {
       console.log(snapshot.val())
@@ -128,18 +144,27 @@ class App extends React.Component {
       this.getUnverifiedUsers()
     })
   }
+  declineUser = (key) => {
+    var ref = firebase.database().ref('Users' + '/' + key)
+    let { unVerifiedUsers } = this.state
+    let userInfo = unVerifiedUsers[key]
+    userInfo.verified = 'denied'
+    ref.set(userInfo).then(() => {
+      this.getUnverifiedUsers()
+    })
+  }
+
   render() {
     let {
       buttonLabel,
       className
     } = this.props
     let { heading, subtitle, description, userSignedIn, showModal, password, pictureUploadingToServer,
-      unVerifiedUsers } = this.state
+      unVerifiedUsers, articleFor, showDropDown } = this.state
     let obj = Object.keys(unVerifiedUsers ? unVerifiedUsers : {})
     return (
       <>
-
-        {/* <Modal isOpen={showModal} className={className}>
+        <Modal isOpen={showModal} className={className}>
           <ModalHeader >Enter Admin Password To Continue</ModalHeader>
           <ModalBody>
             <Input placeholder={'Password'} type={'password'} value={password}
@@ -150,7 +175,7 @@ class App extends React.Component {
             <Button color="primary" onClick={this.signIn} >Login</Button>{' '}
             <Button color="secondary" onClick={() => this.setState({ showModal: false })}>Cancel</Button>
           </ModalFooter>
-        </Modal> */}
+        </Modal>
 
         {userSignedIn ?
           <div className={'container'}>
@@ -162,15 +187,22 @@ class App extends React.Component {
                     <div key={index} className={'usersList'}>
                       <div>
                         <span className={'info'}>{item.username}</span>
+                        <span style={{ display: "block", paddingTop: 1, paddingBottom: 1 }}>{item.email}</span>
                         <span>{item.profession}</span>
                       </div>
-                      <Button outline color={'primary'} style={{ height: 37 }}
-                        onClick={() => this.verifyUsers(key)}
-                      >Verify</Button>
+                      <div>
+                        <Button outline color={'primary'} style={{ height: 37, marginRight: 12 }}
+                          onClick={() => this.verifyUsers(key)}
+                        >Verify</Button>
+                        <Button outline color={'danger'} style={{ height: 37, marginRight: 12 }}
+                          onClick={() => this.declineUser(key)}
+                        >Decline</Button>
+                      </div>
                     </div>
                   )
                 })
-                : null
+                :
+                <span>There are not any users to be verifeid.</span>
             }
             <div className={'imgContainer'}>
               <img src={download} alt='mypics' width='200px' style={{ margin: '25px' }} />
@@ -193,6 +225,18 @@ class App extends React.Component {
                 onChange={this.descriptionHandler}
               />
             </div>
+            <div style={{ margin: 12 }}>
+              <Dropdown isOpen={showDropDown}
+                toggle={() => this.setState({ showDropDown: !showDropDown })}>
+                <DropdownToggle caret style={{ width: 200 }}>
+                  {articleFor}
+                </DropdownToggle>
+                <DropdownMenu>
+                  <DropdownItem onClick={() => this.setState({ articleFor: "Swipe Up" })}>Swipe Up</DropdownItem>
+                  <DropdownItem onClick={() => this.setState({ articleFor: "Swipe Down" })}>Swipe Down</DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
+            </div>
             <ImageUploader
               withIcon={true}
               buttonText='Choose images'
@@ -201,6 +245,7 @@ class App extends React.Component {
               imgExtension={['.jpg', '.gif', '.png', '.gif']}
               maxFileSize={5242880}
             />
+
             <Button color="primary" disabled={pictureUploadingToServer} size="lg" block onClick={this.submitArticle}> Submit Article</Button>
           </div>
           :

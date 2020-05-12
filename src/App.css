@@ -39,25 +39,28 @@
 
 
 body {
-  /* background-color: white;
-  color: blacks;
-  padding: 50px 250px 50px 550px;
-  font-family: Arial; */
-  /* text-align: center`; */
+ 
 }
 
 .container{
-width:  60%;
+  width: 75%;
+/* display: flex; */
 margin-bottom:  12px;
-
 }
 
+.leftContainer{
+  width:  20%;
+  margin-right: 12px;
+  border-right: grey 2px solid;
+}
+.rightContainer{
+  width: 80%;
+}
 .usersList{
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-left: 12px;
-  padding-right: 12px;
+  padding: 6px;
   border: 1px solid #bbbbbb;
   border-radius: 7px;
   /* padding: 12px; */
